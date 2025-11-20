@@ -794,6 +794,8 @@ int dev_is_partitioned(struct cmd_context *cmd, struct device *dev)
 	return 0;
 }
 
+#ifdef __linux__
+
 /*
  * Get primary dev for the dev supplied.
  *
@@ -914,6 +916,15 @@ out:
 
 	return ret;
 }
+
+#else
+
+int dev_get_primary_dev(struct dev_types *dt, struct device *dev, dev_t *result)
+{
+	return 0;
+}
+
+#endif
 
 #ifdef BLKID_WIPING_SUPPORT
 int fs_block_size_and_type(const char *pathname, uint32_t *fs_block_size_bytes, char *fstype, int *nofs)
@@ -1483,11 +1494,6 @@ int dev_is_pmem(struct dev_types *dt, struct device *dev)
 }
 
 #else
-
-int dev_get_primary_dev(struct dev_types *dt, struct device *dev, dev_t *result)
-{
-	return 0;
-}
 
 unsigned long dev_alignment_offset(struct dev_types *dt, struct device *dev)
 {

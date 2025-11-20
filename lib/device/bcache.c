@@ -26,10 +26,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#ifndef __CYGWIN__
 #include <libaio.h>
+#endif
 #include <unistd.h>
+#ifndef __CYGWIN__
 #include <linux/fs.h>
 #include <sys/user.h>
+#endif
 
 #define SECTOR_SHIFT 9L
 

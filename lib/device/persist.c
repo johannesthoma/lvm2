@@ -32,7 +32,9 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/ioctl.h>
+#ifndef __CYGWIN__
 #include <scsi/sg.h>
+#endif
 
 #define SCSI_PR_BUF_SIZE 8192 /* space for 1024 keys */
 

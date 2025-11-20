@@ -18,7 +18,9 @@
 #include "device_mapper/all.h"
 #include "base/memory/container_of.h"
 
+#ifndef __CYGWIN__
 #include <linux/fs.h>
+#endif
 #include <stdint.h>
 #include <stdbool.h>
 

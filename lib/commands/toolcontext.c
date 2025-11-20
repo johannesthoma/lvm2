@@ -36,7 +36,9 @@
 
 #include <locale.h>
 #include <sys/stat.h>
+#ifndef __CYGWIN__
 #include <sys/syscall.h>
+#endif
 #include <sys/utsname.h>
 #include <syslog.h>
 #include <time.h>

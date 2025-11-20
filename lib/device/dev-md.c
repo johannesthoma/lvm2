@@ -524,7 +524,8 @@ int dev_is_md_with_end_superblock(struct dev_types *dt, struct device *dev)
 
 int dev_is_md_component(struct cmd_context *cmd __attribute__((unused)),
 	      struct device *dev __attribute__((unused)),
-	      uint64_t *sb __attribute__((unused)))
+	      uint64_t *sb __attribute__((unused)),
+	      int full __attribute__((unused)))
 {
 	return 0;
 }
