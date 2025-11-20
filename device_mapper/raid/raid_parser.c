@@ -23,6 +23,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifdef __CYGWIN__
+typedef unsigned int __le32;
+typedef unsigned long long __le64;
+#endif
+
 /* Copied/derived from kernel's drivers/md/dm-raid.c so this is prone to out-of-sync (factor out to header file?). */
 #define	MAX_RAID_DEVICES		253 /* md-raid kernel limit? */
 #define UINT64_BITS			(sizeof(uint64_t) * 8)

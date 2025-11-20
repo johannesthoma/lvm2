@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <fcntl.h>
 #include <dirent.h>
+#define __USE_LINUX_IOCTL_DEFS 1
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
 #include <limits.h>
