@@ -37,7 +37,9 @@
 #    define BLKDISCARD	_IO(0x12,119)
 #  endif
 #else
+#ifndef __CYGWIN__
 #  include <sys/disk.h>
+#endif
 #  define BLKBSZGET DKIOCGETBLOCKSIZE
 #  define BLKSSZGET DKIOCGETBLOCKSIZE
 #  define BLKGETSIZE64 DKIOCGETBLOCKCOUNT

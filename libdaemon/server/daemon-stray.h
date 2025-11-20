@@ -29,7 +29,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#ifndef __CYGWIN__
 #include <sys/syscall.h>
+#endif
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -314,7 +314,11 @@ int fs_get_info(struct cmd_context *cmd, struct logical_volume *lv, struct fs_in
 
 		if ((ret = fstat(fd, &st_crypt)) < 0)
 			log_sys_error("fstat", crypt_path);
+#ifdef __CYGWIN__
+		else if (1)
+#else
 		else if ((ret = ioctl(fd, BLKGETSIZE64, &info.crypt_dev_size_bytes)) < 0)
+#endif
 			log_error("Failed to get crypt device size %s.", crypt_path);
 
 		if (close(fd))

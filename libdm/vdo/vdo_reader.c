@@ -30,7 +30,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#ifndef __CYGWIN__
 #include <linux/fs.h>	/* For block ioctl definitions */
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,7 +207,11 @@ int dm_vdo_parse_logical_size(const char *vdo_path, uint64_t *logical_blocks)
 		return 0;
 	}
 
+#ifdef __CYGWIN__
+	if (1) {	/* always fail for now */
+#else
 	if (ioctl(fh, BLKGETSIZE64, &size) == -1) {
+#endif
 		if (errno != ENOTTY) {
 			log_sys_debug("ioctl", vdo_path);
 			goto err;
