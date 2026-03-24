@@ -502,7 +502,9 @@ static int _scan_dev_open(struct device *dev)
 	name = name_sl->str;
 
 	flags |= O_DIRECT;
+#ifndef __CYGWIN__
 	flags |= O_NOATIME;
+#endif
 
 	/*
 	 * FIXME: udev is a train wreck when we open RDWR and close, so we
@@ -1829,7 +1831,9 @@ int label_scan_reopen_rw(struct device *dev)
 	}
 
 	flags |= O_DIRECT;
+#ifndef __CYGWIN__
 	flags |= O_NOATIME;
+#endif
 	flags |= O_RDWR;
 
 	fd = open(name, flags, 0777);
