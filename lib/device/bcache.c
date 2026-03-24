@@ -62,6 +62,8 @@ static inline struct dm_list *_list_pop(struct dm_list *head)
 
 //----------------------------------------------------------------
 
+#ifndef __CYGWIN__
+
 struct control_block {
 	struct dm_list list;
 	void *context;
@@ -170,9 +172,13 @@ static void _async_destroy(struct io_engine *ioe)
 	free(e);
 }
 
+#endif
+
 static int _last_byte_di;
 static uint64_t _last_byte_offset;
 static int _last_byte_sector_size;
+
+#ifndef __CYGWIN__
 
 static bool _async_issue(struct io_engine *ioe, enum dir d, int di,
 			 sector_t sb, sector_t se, void *data, void *context)
@@ -421,6 +427,16 @@ struct io_engine *create_async_io_engine(void)
 	/* coverity[leaked_storage] 'e' is not leaking */
 	return &e->e;
 }
+
+#else 
+
+struct io_engine *create_async_io_engine(void)
+{
+	log_warn("async I/O engine not supported on CYGWIN");
+	return NULL;
+}
+
+#endif
 
 //----------------------------------------------------------------
 
