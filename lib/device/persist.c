@@ -360,6 +360,8 @@ static int write_key_file(struct cmd_context *cmd, struct volume_group *vg, uint
 	return 1;
 }
 
+#ifndef __CYGWIN__
+
 static int dev_read_reservation_scsi(struct cmd_context *cmd, struct device *dev, uint64_t *holder_ret, int *prtype_ret)
 {
 	const char *devname;
@@ -621,6 +623,25 @@ out:
 
 	return ret;
 }
+
+#else
+
+static int dev_read_reservation(struct cmd_context *cmd, struct device *dev, uint64_t *holder_ret, int *prtype_ret)
+{
+	log_debug("dev_read_reservation not implemented");
+	return 0;
+}
+
+static int dev_find_key_scsi(struct cmd_context *cmd, struct device *dev, int may_fail,
+                        uint64_t find_key, int *found_key,
+                        int find_host_id, uint64_t *found_host_id_key,
+                        int find_all, int *found_count, uint64_t **found_all)
+{
+	log_debug("dev_find_key_scsi not implemented");
+	return 0;
+}
+
+#endif
 
 static int _compare_uint64(const void *a, const void *b)
 {

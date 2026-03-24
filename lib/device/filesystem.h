@@ -17,7 +17,9 @@
 
 #include "lib/device/device.h"
 
+#ifndef __CYGWIN__
 #include <linux/limits.h> /* PATH_MAX */
+#endif
 
 struct cmd_context;
 struct logical_volume;

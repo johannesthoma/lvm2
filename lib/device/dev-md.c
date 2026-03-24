@@ -23,7 +23,7 @@
 #include "lib/device/dev-ext-udev-constants.h"
 #endif
 
-#ifdef __linux__
+#ifndef __CYGWIN__
 
 /* Lifted from <linux/raid/md_p.h> because of difficulty including it */
 
@@ -534,6 +534,11 @@ unsigned long dev_md_stripe_width(struct dev_types *dt __attribute__((unused)),
 				  struct device *dev __attribute__((unused)))
 {
 	return 0UL;
+}
+
+int dev_is_md_with_end_superblock(struct dev_types *dt, struct device *dev)
+{
+	return 0;
 }
 
 #endif

@@ -15,7 +15,7 @@
 #include "lib/misc/lib.h"
 #include "lib/device/dev-type.h"
 
-#ifdef __linux__
+#ifndef __CYGWIN__
 
 #define MAX_PAGESIZE	(64 * 1024)
 #define SIGNATURE_SIZE  10
@@ -68,6 +68,13 @@ int dev_is_swap(struct cmd_context *cmd, struct device *dev, uint64_t *offset_fo
 	}
 
 	return ret;
+}
+
+#else
+
+int dev_is_swap(struct cmd_context *cmd, struct device *dev, uint64_t *offset_found, int full)
+{
+	return 0;
 }
 
 #endif
