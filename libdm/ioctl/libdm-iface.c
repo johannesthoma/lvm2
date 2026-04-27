@@ -450,8 +450,8 @@ static int _open_and_assign_control_fd(const char *control)
 
 #ifdef __CYGWIN__
 
-#define DEVICE_MAPPER_ROOT_DEVICE_NAME "device-mapper"
-#define DEVICE_MAPPER_USER_DEVICE_NAME "device-mapper-user"
+#define DEVICE_MAPPER_ROOT_DEVICE_NAME "device_mapper"
+#define DEVICE_MAPPER_USER_DEVICE_NAME "device_mapper_user"
 
 HANDLE do_open_root_device(int quiet)
 {
