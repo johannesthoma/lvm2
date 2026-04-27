@@ -2109,6 +2109,16 @@ out:
 int dm_device_get_name(uint32_t major, uint32_t minor, int prefer_kernel_name,
 		       char *buf, size_t buf_size)
 {
+#ifdef __CYGWIN__
+#define WIN_DEVICE "\\\\.\\device-mapper"
+
+	if (buf_size < strlen(WIN_DEVICE)) {
+		stack;
+		return 0;
+	}
+	strncpy(buf, WIN_DEVICE, buf_size);
+	return 1;
+#endif
 	if (!*_sysfs_dir)
 		return 0;
 

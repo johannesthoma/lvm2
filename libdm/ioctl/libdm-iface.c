@@ -36,6 +36,10 @@
 
 #include "libdm/misc/dm-ioctl.h"
 
+#ifdef __CYGWIN__
+#include <windows.h>
+#endif
+
 /*
  * Ensure build compatibility.  
  * The hard-coded versions here are the highest present 
@@ -83,6 +87,9 @@ static dm_bitset_t _dm_bitset = NULL;
 static uint32_t _dm_device_major = 0;
 
 static int _control_fd = -1;
+#ifdef __CYGWIN__
+static HANDLE _control_handle = INVALID_HANDLE_VALUE;
+#endif
 static int _hold_control_fd_open = 0;
 static int _version_checked = 0;
 static int _version_ok = 1;
@@ -441,8 +448,54 @@ static int _open_and_assign_control_fd(const char *control)
 }
 #endif
 
+#ifdef __CYGWIN__
+
+#define DEVICE_MAPPER_ROOT_DEVICE_NAME "device-mapper"
+#define DEVICE_MAPPER_USER_DEVICE_NAME "device-mapper-user"
+
+HANDLE do_open_root_device(int quiet)
+{
+        HANDLE h;
+        DWORD err = ERROR_SUCCESS;
+
+        h = CreateFile("\\\\.\\" DEVICE_MAPPER_ROOT_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (h == INVALID_HANDLE_VALUE) {
+	        err = GetLastError();
+
+		if (err == ERROR_ACCESS_DENIED) {
+			h = CreateFile("\\\\.\\" DEVICE_MAPPER_USER_DEVICE_NAME, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (h == INVALID_HANDLE_VALUE)
+				err = GetLastError();
+		}
+	}
+
+	if (h == INVALID_HANDLE_VALUE && !quiet) {
+	        if (err != ERROR_SUCCESS) {
+			fprintf(stderr, "Couldn't open root device, error is %d\n", err);
+			switch (err) {
+			case ERROR_FILE_NOT_FOUND:
+				fprintf(stderr, "(this is most likely because the WinDRBD driver is not loaded).\n");
+				break;
+			case ERROR_ACCESS_DENIED:
+				fprintf(stderr, "(this is most likely because you are not running as Administrator).\n");
+				break;
+			}
+		}
+        }
+        return h;
+}
+
+#endif
+
+
 static int _open_control(void)
 {
+#ifdef __CYGWIN__
+	_control_handle = do_open_root_device(0);
+	if (_control_handle == INVALID_HANDLE_VALUE )
+		return 0;
+	return 1;
+#else
 #ifdef DM_IOCTLS
 	char control[PATH_MAX];
 	uint32_t major = MISC_MAJOR;
@@ -493,6 +546,7 @@ bad:
 	return 0;
 #else
 	return 1;
+#endif
 #endif
 }
 
@@ -2200,6 +2254,7 @@ static struct dm_ioctl *_do_dm_ioctl(struct dm_task *dmt, unsigned command,
 #ifdef DM_IOCTLS
 	dmt->ioctl_errno = 0;
 
+printf("ioctl control_fd: %d command: %d\n", _control_fd, command);
 	r = ioctl(_control_fd, command, dmi);
 
 	if (dmt->record_timestamp)
