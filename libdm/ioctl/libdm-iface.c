@@ -86,9 +86,10 @@ static unsigned _dm_multiple_major_support = 1;
 static dm_bitset_t _dm_bitset = NULL;
 static uint32_t _dm_device_major = 0;
 
-static int _control_fd = -1;
 #ifdef __CYGWIN__
 static HANDLE _control_handle = INVALID_HANDLE_VALUE;
+#else
+static int _control_fd = -1;
 #endif
 static int _hold_control_fd_open = 0;
 static int _version_checked = 0;
@@ -429,14 +430,23 @@ int dm_is_dm_major(uint32_t major)
 
 static void _close_control_fd(void)
 {
+#ifdef __CYGWIN__
+	if (_control_handle != INVALID_HANDLE_VALUE ) {
+		if (!CloseHandle(_control_handle)) 
+			log_sys_debug("CloseHandle", "_control_handle");
+		_control_handle = INVALID_HANDLE_VALUE;
+	}
+#else
 	if (_control_fd != -1) {
 		if (close(_control_fd) < 0)
 			log_sys_debug("close", "_control_fd");
 		_control_fd = -1;
 	}
+#endif
 }
 
 #ifdef DM_IOCTLS
+#ifndef __CYGWIN__
 static int _open_and_assign_control_fd(const char *control)
 {
 	if ((_control_fd = open(control, O_RDWR)) < 0) {
@@ -446,6 +456,7 @@ static int _open_and_assign_control_fd(const char *control)
 
 	return 1;
 }
+#endif
 #endif
 
 #ifdef __CYGWIN__
@@ -471,10 +482,10 @@ HANDLE do_open_root_device(int quiet)
 
 	if (h == INVALID_HANDLE_VALUE && !quiet) {
 	        if (err != ERROR_SUCCESS) {
-			fprintf(stderr, "Couldn't open root device, error is %d\n", err);
+			fprintf(stderr, "Couldn't open device mapper control device, error is %d\n", err);
 			switch (err) {
 			case ERROR_FILE_NOT_FOUND:
-				fprintf(stderr, "(this is most likely because the WinDRBD driver is not loaded).\n");
+				fprintf(stderr, "(this is most likely because the device mapper driver is not loaded).\n");
 				break;
 			case ERROR_ACCESS_DENIED:
 				fprintf(stderr, "(this is most likely because you are not running as Administrator).\n");
@@ -2254,8 +2265,23 @@ static struct dm_ioctl *_do_dm_ioctl(struct dm_task *dmt, unsigned command,
 #ifdef DM_IOCTLS
 	dmt->ioctl_errno = 0;
 
-printf("ioctl control_fd: %d command: %d\n", _control_fd, command);
+printf("ioctl control_handle: 0x%p command: 0x%lx\n", _control_handle, command);
+#ifdef __CYGWIN__
+
+	r = 0;
+	DWORD bytes_returned;
+	if (!DeviceIoControl(_control_handle, command, dmi, dmi->data_size, dmi, dmi->data_size, &bytes_returned, NULL)) {
+		DWORD err = GetLastError();
+
+	        if (err != ERROR_SUCCESS) {
+			fprintf(stderr, "Couldn't send ioctl to device mapper control device, error is %d\n", err);
+			r = ENOTTY;	/* op not supported */
+		}
+	}
+
+#else
 	r = ioctl(_control_fd, command, dmi);
+#endif
 
 	if (dmt->record_timestamp)
 		if (!dm_timestamp_get(_dm_ioctl_timestamp))
