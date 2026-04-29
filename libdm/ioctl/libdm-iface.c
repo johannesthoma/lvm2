@@ -2265,17 +2265,25 @@ static struct dm_ioctl *_do_dm_ioctl(struct dm_task *dmt, unsigned command,
 #ifdef DM_IOCTLS
 	dmt->ioctl_errno = 0;
 
-printf("ioctl control_handle: 0x%p command: 0x%lx\n", _control_handle, command);
 #ifdef __CYGWIN__
 
+printf("ioctl control_handle: 0x%p command: 0x%lx dmi: %p\n", _control_handle, command, dmi);
+
+/* This translates to:
+	win_command = CTL_CODE(DM_IOCTL, command & 0xff, METHOD_BUFFERED, FILE_ANY_ACCESS
+	METHOD_BUFFERED and FILE_ANY_ACCESS are both 0.
+*/
+
+	DWORD win_command = (DM_IOCTL << 16) | ((command & 0xff) << 2); 
 	r = 0;
 	DWORD bytes_returned;
-	if (!DeviceIoControl(_control_handle, command, dmi, dmi->data_size, dmi, dmi->data_size, &bytes_returned, NULL)) {
+	if (!DeviceIoControl(_control_handle, win_command, dmi, dmi->data_size, dmi, dmi->data_size, &bytes_returned, NULL)) {
 		DWORD err = GetLastError();
 
 	        if (err != ERROR_SUCCESS) {
 			fprintf(stderr, "Couldn't send ioctl to device mapper control device, error is %d\n", err);
-			r = ENOTTY;	/* op not supported */
+			r = -1;
+			errno = ENOTTY;	/* op not supported */
 		}
 	}
 
