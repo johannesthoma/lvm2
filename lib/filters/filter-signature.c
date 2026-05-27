@@ -18,7 +18,7 @@
 #include "lib/filters/filter.h"
 #include "lib/commands/toolcontext.h"
 
-#ifdef __linux__
+#if (defined __linux__) || (defined __CYGWIN__)
 
 #define BUFSIZE 4096
 
