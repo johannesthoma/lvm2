@@ -22,6 +22,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef __CYGWIN__
+#define __USE_LINUX_IOCTL_DEFS
+#endif
 #include <sys/ioctl.h>
 
 #ifdef __linux__
@@ -36,10 +39,16 @@
 #  ifndef BLKDISCARD
 #    define BLKDISCARD	_IO(0x12,119)
 #  endif
-#else
-#ifndef __CYGWIN__
+#elif (defined __CYGWIN__)
+#  define BLKSIZE_SHIFT SECTOR_SHIFT
+#  ifndef BLKGETSIZE64		/* fs.h out-of-date */
+#    define BLKGETSIZE64 _IOR(0x12, 114, size_t)
+#  endif /* BLKGETSIZE64 */
+#  ifndef BLKDISCARD
+#    define BLKDISCARD	_IO(0x12,119)
+#  endif
+#else	/* Mac OS X */
 #  include <sys/disk.h>
-#endif
 #  define BLKBSZGET DKIOCGETBLOCKSIZE
 #  define BLKSSZGET DKIOCGETBLOCKSIZE
 #  define BLKGETSIZE64 DKIOCGETBLOCKCOUNT
@@ -108,11 +117,7 @@ static int _dev_get_size_dev(struct device *dev, uint64_t *size)
 		do_close = 1;
 	}
 
-#ifndef __CYGWIN__
 	if (ioctl(fd, BLKGETSIZE64, size) < 0) {
-#else
-	if (1) {
-#endif
 		log_warn("WARNING: %s: ioctl BLKGETSIZE64 %s", name, strerror(errno));
 		if (do_close && !dev_close_immediate(dev))
 			stack;
@@ -146,16 +151,16 @@ static int _dev_read_ahead_dev(struct device *dev, uint32_t *read_ahead)
 		return 0;
 	}
 
-#ifndef __CYGWIN__
-	if (ioctl(dev->fd, BLKRAGET, &read_ahead_long) < 0) {
+#ifdef __CYGWIN__
+	read_ahead_long = 0;
 #else
-	if (1) {
-#endif
+	if (ioctl(dev->fd, BLKRAGET, &read_ahead_long) < 0) {
 		log_warn("WARNING: %s: ioctl BLKRAGET %s.", dev_name(dev), strerror(errno));
 		if (!dev_close_immediate(dev))
 			stack;
 		return 0;
 	}
+#endif
 
 	*read_ahead = (uint32_t) read_ahead_long;
 	dev->read_ahead = read_ahead_long;
@@ -183,11 +188,7 @@ static int _dev_discard_blocks(struct device *dev, uint64_t offset_bytes, uint64
 		       size_bytes, offset_bytes, dev_name(dev),
 		       test_mode() ? " (test mode - suppressed)" : "");
 
-#ifndef __CYGWIN__
 	if (!test_mode() && ioctl(dev->fd, BLKDISCARD, &discard_range) < 0) {
-#else
-	if (1) {
-#endif
 		log_warn("WARNING: %s: ioctl BLKDISCARD at offset %" PRIu64 " size %" PRIu64 " failed: %s.",
 			  dev_name(dev), offset_bytes, size_bytes, strerror(errno));
 		if (!dev_close_immediate(dev))
@@ -239,14 +240,14 @@ int dev_get_direct_block_sizes(struct device *dev, unsigned int *physical_block_
 	 * BLKSSZGET from kernel comment for blk_queue_logical_block_size:
 	 * "the lowest possible block size that the storage device can address."
 	 */
-#ifndef __CYGWIN__
-	if (ioctl(fd, BLKSSZGET, &lbs)) {
+#ifdef __CYGWIN__
+	lbs = 0;
 #else
-	if (1) {
-#endif
+	if (ioctl(fd, BLKSSZGET, &lbs)) {
 		stack;
 		lbs = 0;
 	}
+#endif
 
 	dev->physical_block_size = pbs;
 	dev->logical_block_size = lbs;
